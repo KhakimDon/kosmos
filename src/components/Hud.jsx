@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { state, engine } from '../engine/engine.js'
@@ -224,6 +224,60 @@ function Menu({ open, onClose, pos, sections }) {
   )
 }
 
+// mobile journey frames → JOURNEY stops
+const MOBILE_STOPS = [0, 1, 2, 4, 11, 12]
+
+function MobileMenu({ open, onClose, pos, sections }) {
+  const root = useRef(null)
+  const idx = Math.min(sections.length - 1, Math.floor(pos))
+  useEffect(() => {
+    const el = root.current
+    if (!el) return
+    const rows = el.querySelectorAll('.mm-row, .mm-foot, .mm-top')
+    if (open) {
+      window.__lenis?.stop()
+      document.documentElement.classList.add('menu-open')
+      el.style.pointerEvents = 'auto'
+      sound.swell(1.4, 0.16)
+      gsap.timeline()
+        .fromTo(el, { clipPath: 'circle(0% at 88% 4%)' }, { clipPath: 'circle(160% at 88% 4%)', duration: 1.1, ease: 'expo.inOut' })
+        .fromTo(rows, { opacity: 0, y: 26, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1, ease: 'cine', stagger: 0.06 }, 0.35)
+        .fromTo(el.querySelectorAll('.mm-rule'), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'cine', stagger: 0.06 }, 0.4)
+    } else {
+      document.documentElement.classList.remove('menu-open')
+      gsap.to(el, { clipPath: 'circle(0% at 88% 4%)', duration: 0.8, ease: 'expo.inOut', onComplete: () => { el.style.pointerEvents = 'none' } })
+      window.__lenis?.start()
+    }
+  }, [open])
+  const go = (i) => { onClose(); setTimeout(() => travelTo(sections[i]?.key), 380) }
+  return (
+    <div ref={root} className="mmenu" style={{ clipPath: 'circle(0% at 88% 4%)', pointerEvents: 'none' }} aria-hidden={!open}>
+      <div className="mm-top">
+        <span>INDEX OF THE JOURNEY</span>
+        <button onClick={onClose} aria-label="Close index">CLOSE <i className="mm-x" /></button>
+      </div>
+      <ol className="mm-list">
+        {sections.map((s, i) => {
+          const j = JOURNEY[MOBILE_STOPS[i] ?? i] || JOURNEY[0]
+          const words = j.name.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()).split(' ')
+          const last = words.pop()
+          return (
+            <li key={s.key} className="mm-row" data-here={i === idx}>
+              <span className="mm-rule" />
+              <button onClick={() => go(i)}>
+                <span className="mm-idx">{j.idx}</span>
+                <span className="mm-name">{words.join(' ')} <em>{last}</em></span>
+                <span className="mm-dist">{i === idx ? 'YOU ARE HERE' : j.dist}</span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+      <div className="mm-foot">SCALE LOGARITHMIC · TAP A STOP TO TRAVEL</div>
+    </div>
+  )
+}
+
 export function Hud({ sections, mobile }) {
   const pos = useSectionPosition(sections)
   const [menu, setMenu] = useState(false)
@@ -241,6 +295,22 @@ export function Hud({ sections, mobile }) {
       lastIdx.current = idx
     }
   }, [idx])
+  const closeMenu = useCallback(() => setMenu(false), [])
+  // the mobile hero carries its own MENU in the design: it opens the same index
+  useEffect(() => {
+    if (!mobile) return
+    const m = document.querySelector('#m00 [data-name="Menu"]')
+    if (!m) return
+    m.dataset.cursor = 'link'
+    m.style.pointerEvents = 'auto'
+    m.style.cursor = 'pointer'
+    m.setAttribute('role', 'button')
+    const f = () => setMenu(true)
+    m.addEventListener('click', f)
+    const k = (e) => { if (e.key === 'Escape') setMenu(false) }
+    window.addEventListener('keydown', k)
+    return () => { m.removeEventListener('click', f); window.removeEventListener('keydown', k) }
+  }, [mobile])
   const pastHero = pos > 0.55
   return (
     <>
@@ -255,6 +325,7 @@ export function Hud({ sections, mobile }) {
       </header>
       {!mobile && <DepthGauge pos={pos} sections={sections} visible={intro && pastHero} />}
       {!mobile && <Menu open={menu} onClose={() => setMenu(false)} pos={pos} sections={sections} />}
+      {mobile && <MobileMenu open={menu} onClose={closeMenu} pos={pos} sections={sections} />}
       <div className="hud-sound-float" data-visible={intro && !pastHero}><SoundToggle /></div>
     </>
   )

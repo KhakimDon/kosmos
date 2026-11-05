@@ -55,8 +55,8 @@ export default function s03(ctx) {
     t += dt
     ps += (p - ps) * Math.min(1, dt * 4)
     // rise: from below the frame to its design seat as the section covers the screen
-    const rise = smooth(ps / 0.46)
-    U.u_cy = base.cy - 0.30 * (1 - rise) + 0.035 * smooth((ps - 0.46) / 0.54)
+    const rise = smooth((ps + 0.1) / 0.42) // already cresting when the section label arrives — no dead frame at the seam
+    U.u_cy = base.cy - 0.22 * (1 - rise) + 0.035 * smooth((ps - 0.46) / 0.54)
     // ring opens: edge-on → design tilt → a little more as we pass
     const open = smooth((ps - 0.05) / 0.5)
     U.u_ringE = -0.045 + (base.e + 0.045) * open - 0.05 * smooth((ps - 0.55) / 0.45) - st.mouse.sny * 0.025

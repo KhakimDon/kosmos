@@ -44,7 +44,12 @@ function resolve(node) {
     shadersUsed.add(path.join(docDir, f.src))
     f.src = base.replace(/\.glsl$/, '')
   }
-  if (Array.isArray(n.text)) n.text = n.text.map((s) => deep(s))
+  if (Array.isArray(n.text)) n.text = n.text.map((s) => {
+    const r = deep(s)
+    if (r.fontStyle === 'italic') r.italic = true
+    delete r.fontStyle
+    return r
+  })
   if (n.children) n.children = n.children.map(resolve)
   return n
 }
@@ -53,6 +58,7 @@ const page = doc.pages[0]
 const out = {}
 for (const f of page.children) {
   if (f.type !== 'frame') continue
+  if (!/^(S\d\d|M —|X2)/.test(f.name)) continue
   out[f.name] = resolve(f)
 }
 fs.mkdirSync(path.join(ROOT, 'src/design'), { recursive: true })

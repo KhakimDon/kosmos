@@ -36,7 +36,9 @@ export function Loader() {
     const size = () => renderer.setSize(window.innerWidth, window.innerHeight, false)
     size()
     window.addEventListener('resize', size)
+    let dead = false
     const loop = () => {
+      if (dead || !canvas.current) { renderer.dispose(); return }
       const t = (performance.now() - t0) / 1000
       const W = canvas.current.width, H = canvas.current.height
       U.ds_origin.value.set(0, 0)
@@ -73,6 +75,7 @@ export function Loader() {
       })
     })
     return () => {
+      dead = true
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', size)
       tl.kill()

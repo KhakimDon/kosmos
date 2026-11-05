@@ -8,7 +8,7 @@ import { autoChoreo, gsap, ScrollTrigger, SplitText, state } from '../auto.js'
 import { makeShader } from '../../engine/shader.js'
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
-const GLITCH_P = 0.2 // section progress where reality tears (top of section ~45% down the viewport)
+const GLITCH_P = 0.11 // section progress where reality tears (top of section ~70% down the viewport)
 
 export default function s07(ctx) {
   const { el, view } = ctx

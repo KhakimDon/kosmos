@@ -94,6 +94,12 @@ export default function s02(ctx) {
     expSpan.style.cssText = 'display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums;color:#eef1f7'
     label.append(baseSpan, expSpan)
     label.style.fontVariantNumeric = 'tabular-nums'
+    // hang the label from the leader's end (right-aligned) so the growing exponent never runs under the ring
+    label.style.left = '1232px'
+    label.style.top = '1074px'
+    label.style.translate = '-100% 0'
+    label.style.textAlign = 'right'
+    label.style.whiteSpace = 'nowrap'
   }
   const ripples = []
   if (ring) {

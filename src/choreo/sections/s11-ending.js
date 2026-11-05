@@ -59,7 +59,7 @@ export function createEnding(ctx, P) {
   let tl = null
   let lastFocus = null
 
-  const fadeTargets = () => [ctx.q('Headline'), ctx.q('CTA'), ctx.q('CTA underline'), ctx.q('Secondary'), ctx.q('Depth gauge')].filter(Boolean)
+  const fadeTargets = () => ['Headline', 'CTA', 'CTA underline', 'Secondary', 'Depth gauge', 'Sub links', 'Gauge row', 'Gauge distance'].map((n) => ctx.q(n)).filter(Boolean)
 
   function enter() {
     if (P.ending) return
@@ -67,9 +67,9 @@ export function createEnding(ctx, P) {
     document.documentElement.classList.add('is-beyond')
     lastFocus = document.activeElement
     const lenis = window.__lenis
-    const s = window.innerWidth / 1440
+    const s = ctx.el.offsetWidth / (ctx.frame.width || 1440)
     // tilt the camera up: bring the ring to the centre of the screen
-    const target = ctx.el.offsetTop + 450 * s - window.innerHeight / 2
+    const target = ctx.el.offsetTop + (P.focusY ?? 450) * s - window.innerHeight / 2
     lenis?.scrollTo(target, { duration: 1.5, force: true, lock: true, easing: (t) => 1 - Math.pow(1 - t, 3), onComplete: () => lenis.stop() })
     state.flashColor.set(1.0, 0.9, 0.76)
 

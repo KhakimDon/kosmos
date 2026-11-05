@@ -2,7 +2,7 @@
 // Sections without a module fall back to autoChoreo.
 import { autoChoreo } from '../auto.js'
 
-const mods = import.meta.glob('./s*.js', { eager: true })
+const mods = import.meta.glob(['./s*.js', './m*.js'], { eager: true })
 
 export function choreoFor(key) {
   const m = mods[`./${key}.js`]
