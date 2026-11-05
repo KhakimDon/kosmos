@@ -26,7 +26,7 @@ export function Section({ id, frame, designWidth = 1440, choreo, index }) {
       if (!target) continue
       const front = FRONT_LAYERS.has(node.name)
       const shader = makeShader(fill.src, fill.uniforms || {}, { transparent: front })
-      const view = { el: target, shader, layer: front ? 'front' : 'back', name: node.name, root: node.id === frame.id }
+      const view = { el: target, shader, layer: front ? 'front' : 'back', name: node.name, root: node.id === frame.id, feather: node.id === frame.id && index > 0 }
       views.push(view)
       disposers.push(engine.add(view))
     }

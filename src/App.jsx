@@ -2,22 +2,17 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Lenis from 'lenis'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import design from './design/design.json'
+import { SECTIONS, MOBILE } from './sections.js'
 import { engine, state } from './engine/engine.js'
 import { Section } from './components/Section.jsx'
 import { choreoFor } from './choreo/sections/index.js'
 import { Hud } from './components/Hud.jsx'
+import { Loader } from './components/Loader.jsx'
+import { Cursor } from './components/Cursor.jsx'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export const SECTIONS = Object.keys(design)
-  .filter((k) => /^S\d\d/.test(k))
-  .sort()
-  .map((k) => ({ key: 's' + k.slice(1, 3), name: k, frame: design[k] }))
-
-export const MOBILE = (design['M — Mobile Journey']?.children || []).map((f, i) => ({ key: 'm' + String(i).padStart(2, '0'), name: f.name, frame: f }))
-
-export let lenis = null
+let lenis = null
 
 function useStageScale(designWidth) {
   useLayoutEffect(() => {
@@ -66,6 +61,19 @@ export default function App() {
     const onResize = () => ScrollTrigger.refresh()
     window.addEventListener('resize', onResize)
     document.fonts?.ready.then(() => ScrollTrigger.refresh())
+    // hero navigation → journey travel
+    const NAV = { 'Link Origin': 's01', 'Link Systems': 's05', 'Link Research': 's08', 'Link Portal': 's11', Enter: 's01', 'Scroll cue': 's01' }
+    const hero = document.getElementById('s00')
+    const navClick = (e) => {
+      const t = e.target.closest('[data-name]')
+      const n = t && Object.keys(NAV).find((k) => t.closest(`[data-name="${k}"]`))
+      if (n) window.__travelTo?.(NAV[n])
+    }
+    hero?.addEventListener('click', navClick)
+    Object.keys(NAV).forEach((k) => {
+      const el = hero?.querySelector(`[data-name="${k}"]`)
+      if (el) { el.dataset.cursor = 'link'; el.style.cursor = 'pointer'; el.style.pointerEvents = 'auto' }
+    })
     if (new URLSearchParams(location.search).has('nointro')) {
       setTimeout(() => { window.__introDone = true; window.dispatchEvent(new Event('noumena:intro')) }, 200)
     }
@@ -89,6 +97,8 @@ export default function App() {
       </main>
       <canvas ref={front} className="gl gl-front" />
       <Hud sections={list} mobile={mobile} />
+      <Loader />
+      <Cursor />
     </>
   )
 }

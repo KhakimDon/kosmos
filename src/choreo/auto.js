@@ -66,6 +66,10 @@ export function autoChoreo(ctx, opts = {}) {
       v.shiftX = -st.mouse.snx * 16 * mouse
       ctx.onFrame?.(v, st, dt, rect, p)
     }
+  } else if (view && opts.noCamera && !view.onFrame) {
+    const cam = { p: 0 }
+    triggers.push(ScrollTrigger.create({ trigger: el, start: 'top bottom', end: 'bottom top', onUpdate: (s) => { cam.p = s.progress } }))
+    view.onFrame = (v, st, dt, rect) => ctx.onFrame?.(v, st, dt, rect, cam.p)
   }
 
   // 2. Typography
@@ -93,9 +97,9 @@ export function autoChoreo(ctx, opts = {}) {
   })
 
   // 3. Line work: hairline rules grow, SVG paths draw, points ignite
-  const rules = [...el.querySelectorAll('.ds-frame')].filter((f) => f.offsetHeight <= 2 && f.offsetWidth > 8 && !f.children.length)
+  const rules = [...el.querySelectorAll('.ds-frame')].filter((f) => f.offsetHeight <= 2 && f.offsetWidth > 8 && !f.children.length && !f.closest('[data-noauto]'))
   rules.forEach((r, i) => enter.fromTo(r, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 1.6, ease: 'cine' }, 0.3 + Math.min(i * 0.03, 0.9)))
-  const vrules = [...el.querySelectorAll('.ds-frame')].filter((f) => f.offsetWidth <= 2 && f.offsetHeight > 8 && !f.children.length)
+  const vrules = [...el.querySelectorAll('.ds-frame')].filter((f) => f.offsetWidth <= 2 && f.offsetHeight > 8 && !f.children.length && !f.closest('[data-noauto]'))
   vrules.forEach((r, i) => enter.fromTo(r, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 1.8, ease: 'cine' }, 0.3 + Math.min(i * 0.03, 0.9)))
   const paths = [...el.querySelectorAll('.ds-vector path')].filter((p) => !p.closest('[data-noauto]'))
   paths.forEach((p, i) => {

@@ -1,7 +1,7 @@
 // Usage: node tools/shot.mjs <outPrefix> [scrollY,...] [--w=1440 --h=900 --wait=2500]
 import puppeteer from 'puppeteer-core'
 const args = process.argv.slice(2)
-const opt = Object.fromEntries(args.filter(a => a.startsWith('--')).map(a => a.slice(2).split('=')))
+const opt = Object.fromEntries(args.filter(a => a.startsWith('--')).map(a => { const b = a.slice(2); const i = b.indexOf('='); return i < 0 ? [b, ''] : [b.slice(0, i), b.slice(i + 1)] }))
 const pos = args.filter(a => !a.startsWith('--'))
 const out = pos[0] || '/tmp/claude-501/shot'
 const ys = (pos[1] || '0').split(',').map(Number)
@@ -12,6 +12,9 @@ const browser = await puppeteer.launch({
   args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'],
 })
 const page = await browser.newPage()
+// block Vite HMR so other agents' edits don't reload mid-run
+await page.evaluateOnNewDocument(() => { const WS = window.WebSocket; window.WebSocket = function (url, p) { if (String(p).includes('vite')) return { addEventListener() {}, send() {}, close() {}, readyState: 0 }; return new WS(url, p) } })
+if (opt.mx) await page.mouse.move(+opt.mx, +(opt.my || 450))
 await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 })
 const logs = []
 page.on('console', m => logs.push(m.type() + ': ' + m.text()))

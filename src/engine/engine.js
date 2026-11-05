@@ -172,6 +172,7 @@ class Engine {
     state.h = window.innerHeight
     const pr = this.dpr * state.quality
     this.pr = pr
+    state.pr = pr
     this.back.setSize(state.w, state.h, false)
     this.back.domElement.width = Math.round(state.w * pr)
     this.back.domElement.height = Math.round(state.h * pr)
@@ -211,13 +212,16 @@ class Engine {
     const sh = view.shader
     const U = sh.material.uniforms
     U.ds_origin.value.set(vx, vy)
+    const F = view.feather ? Math.min(140, state.h * 0.14) : 0
+    U.ds_top.value = H - rect.top * pr
+    U.ds_feather.value = F * pr
     for (const n of sh.roles.res) U[n].value.set(vw, vh)
     for (const n of sh.roles.time) U[n].value = state.time
     for (const n of sh.roles.mouse) U[n].value.set(state.mouse.sx * pr - vx, H - state.mouse.sy * pr - vy)
     for (const k in sh.u) if (k in U) U[k].value = sh.u[k]
     // scissor = visible part of the element itself (css px)
-    const sx0 = Math.max(0, rect.left), sy0 = Math.max(0, rect.top)
-    const sx1 = Math.min(state.w, rect.right), sy1 = Math.min(state.h, rect.bottom)
+    const sx0 = Math.max(0, rect.left), sy0 = Math.max(0, rect.top - F)
+    const sx1 = Math.min(state.w, rect.right), sy1 = Math.min(state.h, rect.bottom + F)
     return { vx, vy, vw, vh, sx: sx0 * pr, sy: H - sy1 * pr, sw: Math.max(0, (sx1 - sx0) * pr), sh: Math.max(0, (sy1 - sy0) * pr) }
   }
 
@@ -247,7 +251,8 @@ class Engine {
     for (const v of this.views) {
       if (!v.enabled) continue
       const rect = v.el.getBoundingClientRect()
-      if (rect.bottom < -margin || rect.top > state.h + margin || rect.width === 0) continue
+      const ext = v.feather ? 150 : margin
+      if (rect.bottom < -ext || rect.top > state.h + ext || rect.width === 0) continue
       if (v.layer === 'front') { fronts.push([v, rect]); continue }
       v.onFrame?.(v, state, dt, rect)
       const b = this._bind(v, rect, pr, H)
@@ -261,6 +266,7 @@ class Engine {
         // 3D overlay uses the element rect itself (no shader zoom)
         const vx = rect.left * pr, vy = H - rect.bottom * pr
         this.rt.viewport.set(vx, vy, rect.width * pr, rect.height * pr)
+        if (v.overflow3d) this.rt.scissor.set(0, 0, W, H)
         back.setRenderTarget(this.rt)
         back.clearDepth()
         back.render(v.scene3d, v.camera3d)

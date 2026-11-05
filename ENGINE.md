@@ -34,3 +34,8 @@ You can hide DOM vectors that you replace with real 3D (set `style.visibility='h
 
 ## Quality bar
 This is meant to be an Awwwards-level, "how did they make this" experience. Motion must be purposeful, cinematic (long eases, `ease: 'cine'` is registered), layered in depth, reacting to scroll AND cursor. No cheap effects, no bouncy UI, no random particles without meaning. Keep 60 fps: no per-frame layout reads besides what you need, avoid heavy DOM filters on large areas, reuse geometries.
+
+## Additions (later)
+- `view.overflow3d = true` → the 3D overlay scene is not clipped to the section (bleeds over neighbours).
+- Cursor modes: `data-cursor="link" | "object" | "drag"` + optional `data-cursor-label`.
+- tools/shot.mjs blocks Vite HMR reloads; `--mx= --my=` set the mouse position; options split on the first `=`.

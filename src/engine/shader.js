@@ -67,11 +67,12 @@ export function makeShader(name, overrides = {}, { transparent = false } = {}) {
     .replace(/\bgl_FragCoord\b/g, 'ds_FragCoord')
     .replace(/void\s+main\s*\(\s*(void)?\s*\)/, 'void ds_main()')
   src =
-    'precision highp float;\nuniform vec2 ds_origin;\nvec4 ds_FragCoord;\n' +
+    'precision highp float;\nuniform vec2 ds_origin;\nuniform float ds_top;\nuniform float ds_feather;\nvec4 ds_FragCoord;\n' +
     src +
-    '\nvoid main(){ ds_FragCoord = vec4(gl_FragCoord.xy - ds_origin, gl_FragCoord.zw); ds_main(); }\n'
+    '\nvoid main(){ ds_FragCoord = vec4(gl_FragCoord.xy - ds_origin, gl_FragCoord.zw); ds_main();' +
+    ' if (ds_feather > 0.0) { float a = clamp((ds_top + ds_feather - gl_FragCoord.y) / (2.0 * ds_feather), 0.0, 1.0); a = a * a * (3.0 - 2.0 * a); gl_FragColor *= a; } }\n'
 
-  const uniforms = { ds_origin: { value: new THREE.Vector2() } }
+  const uniforms = { ds_origin: { value: new THREE.Vector2() }, ds_top: { value: 0 }, ds_feather: { value: 0 } }
   const roles = { res: [], time: [], mouse: [] }
   const u = {}
   for (const it of info) {
@@ -90,7 +91,8 @@ export function makeShader(name, overrides = {}, { transparent = false } = {}) {
     depthTest: false,
     depthWrite: false,
     transparent,
-    blending: transparent ? THREE.CustomBlending : THREE.NoBlending,
+    // premultiplied "over": opaque shaders behave as before; feathered edges cross-fade
+    blending: THREE.CustomBlending,
     blendSrc: THREE.OneFactor,
     blendDst: THREE.OneMinusSrcAlphaFactor,
   })
@@ -100,4 +102,21 @@ export function makeShader(name, overrides = {}, { transparent = false } = {}) {
   const scene = new THREE.Scene()
   scene.add(mesh)
   return { name, mesh, scene, material, roles, u }
+}
+
+/** Replace a view's shader with another file, carrying over current uniform values. */
+export function swapShader(view, name, overrides = {}) {
+  const old = view.shader
+  const next = makeShader(name, { ...overrides }, { transparent: old.material.transparent })
+  for (const k in old.u) if (k in next.u && !(k in overrides)) next.u[k] = old.u[k]
+  const OU = old.material.uniforms, NU = next.material.uniforms
+  for (const k in OU) {
+    if (k in overrides || !(k in NU)) continue
+    const v = OU[k].value
+    if (v && v.isVector3 && NU[k].value?.isVector3) NU[k].value.copy(v)
+  }
+  view.shader = next
+  ;(view._disposeLater ||= []).push(old)
+  old.material.dispose()
+  return next
 }
